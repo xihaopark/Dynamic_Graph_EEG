@@ -1,0 +1,17 @@
+torch==2.1.0
+numpy==1.23.5
+scipy==1.9.1
+transformers>=4.17.0
+matplotlib
+pandas
+h5py
+scikit-learn
+pyedflib
+torch-geometric
+tqdm
+tensorboardX
+graphviz
+dotted-dict
+networkx
+linear_attention_transformer
+more_itertools
