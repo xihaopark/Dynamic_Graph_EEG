@@ -406,7 +406,6 @@ def train(model, dataloaders, args, device, save_dir, log, tbx):
     avg_time_per_batch = np.mean(time_list)
     max_time_per_batch = np.max(time_list)
 
-    log.info(f"Max Memory Usage in a Batch: {max_memory_usage:.4f} MB")
     log.info(f"Average Time per Batch: {avg_time_per_batch:.4f} seconds")
     log.info(f"Max Time in a Batch: {max_time_per_batch:.4f} seconds")
 
@@ -553,8 +552,6 @@ def evaluate(
                     ('best_thresh', best_thresh)]
     if 'auroc' in scores_dict.keys():
         results_list.append(('auroc', scores_dict['auroc']))
-    # if 'specificity' in scores_dict.keys():
-    #     results_list.append(('specificity', scores_dict['specificity']))
     results = OrderedDict(results_list)
 
     return results
