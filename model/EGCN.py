@@ -26,26 +26,6 @@ class EGCN(torch.nn.Module):
             self.GRCU_layers.append(grcu_i.to(self.device))
 
     def forward(self, Nodes_list, A_list):
-        # Sparse TensorをDense Tensorに変換
-        dense_A_list = [A.to_dense() for A in A_list]
-        
-        # Dense TensorをCPUに移動しNumPy配列に変換
-        np_A_list = [A.cpu().numpy() for A in dense_A_list]
-        # NumPy配列の形状を表示
-        # print("A_list", np_A_list[0])
-
-        # Nodes_listも同様に処理（リストの各要素に対して処理を行う）
-        if isinstance(Nodes_list, list):
-            dense_Nodes_list = [N.to_dense() if N.is_sparse else N for N in Nodes_list]
-            np_Nodes_list = [N.cpu().numpy() for N in dense_Nodes_list]
-        else:
-            dense_Nodes_list = Nodes_list.to_dense() if Nodes_list.is_sparse else Nodes_list
-            np_Nodes_list = dense_Nodes_list.cpu().numpy()
-    
-        # for i, node_emb in enumerate(np_Nodes_list):
-        #     print(f"node_embs_list[{i}]: {node_emb.shape}")
-        # print("node_embs_list", np_Nodes_list.shape)
-        
         node_feats = Nodes_list[-1]
 
         for unit in self.GRCU_layers:
@@ -57,7 +37,6 @@ class EGCN(torch.nn.Module):
         return out
 
 
-########## Model for seizure classification/detection ##########
 class EvolveGCN_Model_classification(nn.Module):
     def __init__(self, args, num_classes, device=None):
         super(EvolveGCN_Model_classification, self).__init__()
@@ -89,57 +68,31 @@ class EvolveGCN_Model_classification(nn.Module):
         Returns:
             pool_logits: logits from last FC layer (before sigmoid/softmax)
         """
-        batch_size, max_seq_len = input_seq.shape[0], input_seq.shape[1]
+        b, max_seq_len = input_seq.shape[0], input_seq.shape[1]
 
-        # (max_seq_len, batch, num_nodes, input_dim)
         input_seq = torch.transpose(input_seq, dim0=0, dim1=1)
 
-        # initialize the hidden state of the encoder
-        # init_hidden_state = self.encoder.init_hidden(
-        #     batch_size).to(self._device)
-
-        # last hidden state of the encoder is the context
-        # (max_seq_len, batch, rnn_units*num_nodes)
         final_hiddens = []
-        for i in range(batch_size):
-            # バッチのi番目のデータを抽出
-            batch_input = input_seq[:, i, :, :]  # 形状: [12, 19, 100]
+        for i in range(b):
+            batch_input = input_seq[:, i, :, :] 
             batch_supports = supports[i]
             
-            # 必要に応じてバッチ次元を追加（例: [1, 12, 19, 100]）
-            # batch_input = batch_input.unsqueeze(1)
-            
-            # print("Batch Input Shape:", batch_input.shape)
             final_hidden = self.encoder(batch_input, batch_supports)
-            # print("Final Hidden Shape:", final_hidden.shape)
             
             # final_hiddenをリストに追加
             final_hiddens.append(final_hidden)
 
         # リストをテンソルに連結
         output = torch.cat([h.unsqueeze(0) for h in final_hiddens], dim=0)
-        # print("Output Shape:", output.shape)
-        # print("Final Hidden Shape:", final_hidden_cat.shape)
-        # (batch_size, max_seq_len, rnn_units*num_nodes)
-        # output = torch.transpose(final_hidden, dim0=0, dim1=1)
-
-        # # extract last relevant output
-        # last_out = utils.last_relevant_pytorch(
-        #     output, seq_lengths, batch_first=True)  # (batch_size, rnn_units*num_nodes)
-        # # (batch_size, num_nodes, rnn_units)
-        # last_out = last_out.view(batch_size, self.num_nodes, self.rnn_units)
         last_out = output.to(self._device)
 
         # final FC layer
         logits = self.fc(self.relu(self.dropout(last_out)))
-        # print("Logits Shape:", logits.shape)
 
         # max-pooling over nodes
         pool_logits, _ = torch.max(logits, dim=1)  # (batch_size, num_classes)
-        # print("Pool Logits Shape:", pool_logits.shape)
 
         return pool_logits, last_out
-########## Model for seizure classification/detection ##########
 
 
 class GRCU(torch.nn.Module):
@@ -169,17 +122,9 @@ class GRCU(torch.nn.Module):
     def forward(self,A_list,node_embs_list):#,mask_list):
         GCN_weights = self.GCN_init_weights
         out_seq = []
-        # if isinstance(node_embs_list, list):
-        #     node_embs_list = torch.stack(node_embs_list, dim=0)  # 新しい次元を追加
-        #     print(f"node_embs_list converted to tensor with shape: {node_embs_list.shape}")
-        # node_embs_list = node_embs_list.permute(1,0,2,3)
-        # print("node: node_embs_list", node_embs_list.shape)
-        # print("A_list", A_list.shape)
-        # print("")
         for t,Ahat in enumerate(A_list):
             node_embs = node_embs_list[t]
-            #first evolve the weights from the initial and use the new weights with the node_embs
-            GCN_weights = self.evolve_weights(GCN_weights)#,node_embs,mask_list[t])
+            GCN_weights = self.evolve_weights(GCN_weights)
             node_embs = self.activation(Ahat.matmul(node_embs.matmul(GCN_weights)))
 
             out_seq.append(node_embs)
