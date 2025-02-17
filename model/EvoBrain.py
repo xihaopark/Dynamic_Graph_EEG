@@ -871,7 +871,7 @@ class EvoBrain(nn.Module):
             outputs.append(node_embeds)
 
         outputs = torch.stack(outputs, dim=0)
-        
+        #print("output dim ===", outputs.shape)
         return outputs
     
     def create_edge_tuples_and_features(self, adj):
@@ -946,10 +946,10 @@ class EvoBrain_classification(nn.Module):
         if self.agg == "concat":
             final_hidden = final_hidden.view(batch_size, -1)  # (batch_size, num_nodes * num_features)
         logits = self.fc(self.relu(self.dropout(final_hidden)))
-        
+        print("logits shape ===", logits.shape) #这里已经是【batch， channel， class】了
         if self.agg == "max":
             # max pooling over nodes
-            pool_logits, _ = torch.max(logits, dim=1)  # (batch_size, num_features)
+            pool_logits, pooled = torch.max(logits, dim=1)  # (batch_size, num_features) #再在这里最大池化
         elif self.agg == "mean":
             # mean pooling over nodes
             pool_logits = torch.mean(logits, dim=1)  # (batch_size, num_features)
@@ -960,5 +960,6 @@ class EvoBrain_classification(nn.Module):
             pool_logits = logits
         else:
             raise ValueError(f"Unsupported aggregation method: {self.agg}")
-        
-        return pool_logits, final_hidden
+        #print("pool_logits shape ===", pool_logits.shape) #这里就已经是【batch， class】
+        #print("pooled shape ===", pooled.shape)
+        return pool_logits, logits #final_hidden
