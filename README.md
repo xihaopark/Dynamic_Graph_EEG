@@ -41,3 +41,33 @@ where `<save-dir>` is the directory where the results are located.
 
 ### Baselines
 You can also test baselines by specifying '--model_name' with 'BIOT', 'evolvegcn', 'dcrnn', 'lstm', or 'cnnlstm'."
+
+---
+
+---
+
+## Tasks
+
+**Task 1**  
+In the `model` folder, you will find two files: **`DCRNNori`** and **`DCRNN`**.  
+- **`DCRNNori`** is the original version of the model.  
+- **`DCRNN`** is the modified version that includes a graph structure learner and an information bottleneck.  
+Compare these two implementations to understand how the graph learner and information bottleneck are integrated into the original framework.
+
+**Task 2**  
+Use the **ToyDataset** to run the following models and record the results:  
+1. All baseline models.  
+2. The original version **`DCRNNori`**.  
+3. The new version **`DCRNN`** with the added components.  
+
+Collect and compare the performance metrics for each model.
+
+**Task 3**  
+Check out the repository [VIB-GSL](https://github.com/RingBDStack/VIB-GSL) to further explore the design of learnable graph structures and information bottlenecks.  
+- Their approach differs from ours in some details (e.g., feature masking).  
+- Try adapting their method to our model and compare the outcomes with our current approach.  
+- The original paper is also provided in their repo; you can refer to it for additional insights.
+
+**Task 4**  
+Coming soon.
+
